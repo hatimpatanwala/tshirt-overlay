@@ -137,7 +137,7 @@ export class TshirtOverlayComponent {
 
           // Update t-shirt position
           this.updateTshirtPosition(poses[0]);
-          this.drawDebugInfo(poses[0]); // Add this line
+          // this.drawDebugInfo(poses[0]); // Add this line
         }
       }
 
@@ -255,8 +255,6 @@ export class TshirtOverlayComponent {
         this.tshirtModel.visible = true;
 
         // Add bounding box visualization
-        const box = new THREE.BoxHelper(this.tshirtModel, 0xffff00);
-        this.scene.add(box);
 
         this.scene.add(this.tshirtModel);
         this.updateTshirtColor();
@@ -327,60 +325,108 @@ export class TshirtOverlayComponent {
     return this.camera.position.clone().add(vector.multiplyScalar(distance));
   }
   private updateTshirtPosition(pose: poseDetection.Pose) {
-    try {
-      const video = this.videoElement.nativeElement;
-      const leftShoulder = pose.keypoints.find(
-        (p) => p.name === 'left_shoulder'
+    // try {
+    //   const video = this.videoElement.nativeElement;
+    //   const leftShoulder = pose.keypoints.find(
+    //     (p) => p.name === 'left_shoulder'
+    //   );
+    //   const rightShoulder = pose.keypoints.find(
+    //     (p) => p.name === 'right_shoulder'
+    //   );
+    //   const leftHip = pose.keypoints.find((p) => p.name === 'left_hip');
+    //   const rightHip = pose.keypoints.find((p) => p.name === 'right_hip');
+
+    //   if (
+    //     !leftShoulder?.score ||
+    //     !rightShoulder?.score ||
+    //     !leftHip?.score ||
+    //     !rightHip?.score
+    //   )
+    //     return;
+    //   if (
+    //     leftShoulder.score < 0.5 ||
+    //     rightShoulder.score < 0.5 ||
+    //     leftHip.score < 0.5 ||
+    //     rightHip.score < 0.5
+    //   )
+    //     return;
+
+    //   // Calculate body measurements
+    //   const shoulderWidth = this.calculateDistance(leftShoulder, rightShoulder);
+    //   const torsoHeight =
+    //     (this.calculateDistance(leftShoulder, leftHip) +
+    //       this.calculateDistance(rightShoulder, rightHip)) /
+    //     2;
+
+    //   // Calculate center point between shoulders, slightly lower for better t-shirt placement
+    //   const centerX = (leftShoulder.x + rightShoulder.x) / 2;
+    //   const centerY =
+    //     (leftShoulder.y + rightShoulder.y) / 2 + shoulderWidth * 0.2; // Offset slightly down
+
+    //   // Convert to normalized device coordinates (-1 to 1)
+    //   const ndcX = (centerX / video.videoWidth) * 2 - 1;
+    //   const ndcY = -(centerY / video.videoHeight) * 2 + 1;
+
+    //   // Calculate scaling factors
+    //   // These values might need adjustment based on your specific t-shirt model
+    //   const baseScale = Math.min(video.videoWidth, video.videoHeight) / 1000;
+    //   const widthScale = (shoulderWidth / video.videoWidth) * 15;
+    //   const heightScale = (torsoHeight / video.videoHeight) * 12;
+
+    //   // Calculate rotation based on shoulder angle
+    //   const angle = Math.atan2(
+    //     rightShoulder.y - leftShoulder.y,
+    //     rightShoulder.x - leftShoulder.x
+    //   );
+
+    //   // Apply transforms with smoothing
+    //   // Position
+    //   const targetPosition = new THREE.Vector3(
+    //     ndcX * 2.5, // Adjust multiplier based on your scene scale
+    //     ndcY * 2, // Adjust multiplier based on your scene scale
+    //     -0.5 // Adjust depth - smaller absolute value brings t-shirt closer to camera
+    //   );
+    //   this.tshirtModel.position.lerp(targetPosition, 0.3);
+
+    //   // Scale
+    //   const targetScale = Math.max(widthScale, heightScale) * baseScale;
+    //   const currentScale = this.tshirtModel.scale.x;
+    //   const newScale = currentScale + (targetScale - currentScale) * 0.3;
+    //   this.tshirtModel.scale.set(newScale * 1.2, newScale, newScale * 0.5);
+
+    //   // Rotation
+    //   const currentRotation = this.tshirtModel.rotation.z;
+    //   const targetRotation = angle;
+    //   this.tshirtModel.rotation.z =
+    //     currentRotation + (targetRotation - currentRotation) * 0.3;
+
+    //   // Adjust camera parameters if needed
+    //   this.camera.position.z = 3; // Adjust based on your scene
+    //   this.camera.lookAt(0, 0, 0);
+    // } catch (error) {
+    //   console.error('Error updating t-shirt position:', error);
+    // }
+    const leftShoulder = pose.keypoints.find(
+      (k: any) => k.name === 'left_shoulder'
+    );
+    const rightShoulder = pose.keypoints.find(
+      (k: any) => k.name === 'right_shoulder'
+    );
+    const leftHip = pose.keypoints.find((k: any) => k.name === 'left_hip');
+    const rightHip = pose.keypoints.find((k: any) => k.name === 'right_hip');
+
+    if (leftShoulder && rightShoulder && leftHip && rightHip) {
+      const shoulderWidth = Math.abs(rightShoulder.x - leftShoulder.x) / 250;
+      const torsoHeight = Math.abs(leftHip.y - leftShoulder.y) / 250;
+      const centerX = (leftShoulder.x + rightShoulder.x) / 2;
+      const centerY = (leftShoulder.y + leftHip.y) / 2;
+      // console.log(shoulderWidth * 3, torsoHeight * 2);
+      this.tshirtModel.scale.set(shoulderWidth * 4, torsoHeight * 2, 1);
+      this.tshirtModel.position.set(
+        (leftShoulder.x + rightShoulder.x) / 620 - 1,
+        -(leftShoulder.y + leftHip.y) / 170 + 1,
+        0
       );
-      const rightShoulder = pose.keypoints.find(
-        (p) => p.name === 'right_shoulder'
-      );
-      const leftHip = pose.keypoints.find((p) => p.name === 'left_hip');
-      const rightHip = pose.keypoints.find((p) => p.name === 'right_hip');
-
-      if (!leftShoulder || !rightShoulder || !leftHip || !rightHip) return;
-
-      // Get original model dimensions (measure your actual model)
-      const originalShoulderWidth = 0.4; // Measure in Three.js units
-      const originalTorsoHeight = 0.6; // Measure in Three.js units
-
-      // Calculate body measurements in pixels
-      const shoulderWidthPx = this.calculateDistance(
-        leftShoulder,
-        rightShoulder
-      );
-      const torsoHeightPx = this.calculateDistance(leftShoulder, leftHip);
-
-      // Convert to Three.js world units
-      const pixelPerUnit = video.videoWidth / 5; // Adjust based on your scene scale
-      const targetShoulderWidth = shoulderWidthPx / pixelPerUnit;
-      const targetTorsoHeight = torsoHeightPx / pixelPerUnit;
-
-      // Calculate scale factors
-      const scaleX = targetShoulderWidth / originalShoulderWidth;
-      const scaleY = targetTorsoHeight / originalTorsoHeight;
-
-      // Apply scaling with smoothing
-      this.tshirtModel.scale.lerp(
-        new THREE.Vector3(scaleX * 1.1, scaleY * 0.9, (scaleX + scaleY) / 2),
-        0.1
-      );
-
-      // Calculate position
-      const midpoint = this.calculateMidpoint(leftShoulder, rightShoulder);
-      const targetPosition = this.convertVideoToThreeCoords(
-        midpoint.x,
-        midpoint.y
-      );
-
-      // Offset for T-shirt drape
-      targetPosition.y -= targetTorsoHeight * 0.15;
-      targetPosition.z = -0.5; // Keep in front of camera
-
-      // Smooth position transition
-      this.tshirtModel.position.lerp(targetPosition, 0.1);
-    } catch (error) {
-      console.error('Error updating t-shirt position:', error);
     }
   }
   // private updateTshirtPosition(pose: poseDetection.Pose) {
