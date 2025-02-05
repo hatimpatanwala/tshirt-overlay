@@ -1,0 +1,16 @@
+<div class="overlay-container">
+  <video #videoElement class="video-feed" autoplay></video>
+  <canvas #canvasElement class="overlay-canvas"></canvas>
+  <canvas #debugCanvas class="debug-canvas"></canvas>
+  <canvas id="debug-info"></canvas>
+</div>
+<div class="controls">
+  <input
+    type="color"
+    [(ngModel)]="tshirtColor"
+    (change)="updateTshirtColor()"
+  />
+  <button (click)="toggleCamera()">Toggle Camera</button>
+  <button (click)="toggleDebug()">Toggle Debug View</button>
+</div>
+<div *ngIf="loading" class="loading">Loading model... Please wait.</div>
